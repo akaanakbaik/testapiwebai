@@ -179,15 +179,17 @@
                         body: JSON.stringify({ query }),
                     });
 
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-                    }
-
                     const data = await response.json();
 
-                    // Display results
-                    logOutput.textContent = data.response || 'Tidak ada respons teks yang diterima.';
+                    if (!response.ok) {
+                        // If response is not OK, data might contain error details from server
+                        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                    }
+
+                    // --- PERUBAHAN DI SINI ---
+                    // Tampilkan seluruh objek JSON di log, bukan hanya teks responsnya.
+                    logOutput.textContent = JSON.stringify(data, null, 2); 
+                    
                     metadataOutput.textContent = JSON.stringify(data.metadata, null, 2);
                     
                     // Generate cURL example
@@ -235,3 +237,5 @@
     </script>
 </body>
 </html>
+
+
