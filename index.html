@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Api's AI by aka</title>
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Antarmuka web sederhana untuk berinteraksi dengan REST API AI. Dibuat oleh aka.">
+    <meta name="keywords" content="AI, API, aaka, Node.js, Artificial Intelligence, REST API">
+    <meta name="author" content="aka">
+    
+    <!-- Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a;
+            color: #e5e7eb;
+            background-image: radial-gradient(#27272a 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .glass-card {
+            background: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-4 sm:p-6 lg:p-8">
+
+    <main class="w-full max-w-4xl mx-auto flex flex-col items-center flex-grow">
+        <!-- Header -->
+        <header class="text-center my-8">
+            <h1 class="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-300">
+                Api's AI
+            </h1>
+            <p class="text-gray-400 mt-2">by aka</p>
+        </header>
+
+        <!-- Main Interaction Card -->
+        <div class="glass-card w-full p-6 sm:p-8 rounded-2xl shadow-2xl shadow-black/30">
+            <!-- Input Area -->
+            <div>
+                <label for="query-input" class="block mb-2 text-sm font-medium text-gray-300">
+                    <span class="bg-gray-700 text-gray-200 px-3 py-1 rounded-md text-xs font-semibold">Nama: AI</span>
+                </label>
+                <textarea 
+                    id="query-input" 
+                    rows="4" 
+                    class="block p-3.5 w-full text-sm text-gray-200 bg-gray-900/50 rounded-lg border border-gray-600 focus:ring-blue-500 focus:border-blue-500 transition duration-300" 
+                    placeholder="Ketik permintaan Anda di sini... contoh: Apa itu Node.js?"></textarea>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-end gap-4 mt-4">
+                <button id="clear-btn" class="px-5 py-2.5 text-sm font-medium text-center text-white bg-red-700 rounded-lg hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-900 transition duration-300">
+                    Clear
+                </button>
+                <button id="exec-btn" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-900 font-medium rounded-lg text-sm px-5 py-2.5 transition duration-300">
+                    Exec
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Section (Initially Hidden) -->
+        <div id="result-container" class="w-full mt-8 hidden">
+            <div class="glass-card w-full p-6 sm:p-8 rounded-2xl shadow-2xl shadow-black/30 space-y-6">
+                <!-- Log Output -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-lg font-semibold text-gray-200">Execution Log</h3>
+                        <button id="copy-log-btn" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium py-1 px-3 rounded-md transition">
+                            Copy Log
+                        </button>
+                    </div>
+                    <div class="bg-black rounded-lg p-4 max-h-96 overflow-y-auto">
+                        <pre id="log-output" class="text-sm text-gray-300 whitespace-pre-wrap break-words"></pre>
+                    </div>
+                </div>
+
+                <!-- Metadata -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-200 mb-2">Metadata</h3>
+                    <div class="bg-black rounded-lg p-4 max-h-60 overflow-y-auto">
+                        <pre id="metadata-output" class="text-sm text-green-400 whitespace-pre-wrap break-words"></pre>
+                    </div>
+                </div>
+
+                <!-- cURL Example -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-200 mb-2">Example cURL</h3>
+                    <div class="bg-black rounded-lg p-4 relative">
+                        <pre id="curl-output" class="text-sm text-yellow-300 whitespace-pre-wrap break-words overflow-x-auto"></pre>
+                        <button id="copy-curl-btn" class="absolute top-3 right-3 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium py-1 px-3 rounded-md transition">
+                            Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contact Card -->
+        <div class="glass-card w-full max-w-sm p-6 rounded-2xl shadow-2xl shadow-black/30 mt-12 text-center">
+            <h3 class="text-xl font-bold text-white">Kontak Saya</h3>
+            <p class="mt-2 text-gray-400">Lihat proyek lainnya di portofolio saya.</p>
+            <a href="https://akadev.my.id" target="_blank" rel="noopener noreferrer" class="mt-4 inline-block bg-teal-500 text-white font-semibold px-6 py-2 rounded-lg hover:bg-teal-600 transition duration-300">
+                My Portofolio
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full text-center text-gray-500 text-sm py-6">
+        <p>made with ❤️ and code by aka</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get DOM elements
+            const queryInput = document.getElementById('query-input');
+            const execBtn = document.getElementById('exec-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const resultContainer = document.getElementById('result-container');
+            const logOutput = document.getElementById('log-output');
+            const metadataOutput = document.getElementById('metadata-output');
+            const curlOutput = document.getElementById('curl-output');
+            const copyLogBtn = document.getElementById('copy-log-btn');
+            const copyCurlBtn = document.getElementById('copy-curl-btn');
+
+            // --- Event Handlers ---
+
+            const handleExec = async () => {
+                const query = queryInput.value.trim();
+                if (!query) {
+                    alert('Mohon masukkan query terlebih dahulu.');
+                    return;
+                }
+
+                // Set loading state
+                execBtn.disabled = true;
+                execBtn.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                `;
+                resultContainer.classList.remove('hidden');
+                logOutput.textContent = 'Menghubungi server AI...';
+                metadataOutput.textContent = '';
+                curlOutput.textContent = '';
+                
+                try {
+                    const response = await fetch('/api/ai', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ query }),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    // Display results
+                    logOutput.textContent = data.response || 'Tidak ada respons teks yang diterima.';
+                    metadataOutput.textContent = JSON.stringify(data.metadata, null, 2);
+                    
+                    // Generate cURL example
+                    const escapedQuery = query.replace(/'/g, "'\\''");
+                    const currentUrl = window.location.origin;
+                    curlOutput.textContent = `curl -X POST '${currentUrl}/api/ai' \\\n-H 'Content-Type: application/json' \\\n-d '{\n  "query": "${escapedQuery}"\n}'`;
+
+                } catch (error) {
+                    logOutput.textContent = `Error: ${error.message}`;
+                    console.error('Fetch error:', error);
+                } finally {
+                    // Reset button state
+                    execBtn.disabled = false;
+                    execBtn.textContent = 'Exec';
+                }
+            };
+            
+            const handleClear = () => {
+                queryInput.value = '';
+                resultContainer.classList.add('hidden');
+                logOutput.textContent = '';
+                metadataOutput.textContent = '';
+                curlOutput.textContent = '';
+            };
+
+            const copyToClipboard = (text, button) => {
+                navigator.clipboard.writeText(text).then(() => {
+                    const originalText = button.textContent;
+                    button.textContent = 'Copied!';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Gagal menyalin:', err);
+                    alert('Gagal menyalin ke clipboard.');
+                });
+            };
+
+            // --- Attach Event Listeners ---
+            execBtn.addEventListener('click', handleExec);
+            clearBtn.addEventListener('click', handleClear);
+            copyLogBtn.addEventListener('click', () => copyToClipboard(logOutput.textContent, copyLogBtn));
+            copyCurlBtn.addEventListener('click', () => copyToClipboard(curlOutput.textContent, copyCurlBtn));
+        });
+    </script>
+</body>
+</html>
