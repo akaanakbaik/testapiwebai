@@ -5,7 +5,6 @@ const cors = require('cors');
 const WebSocket = require('ws');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
-const FormData = require('form-data'); // Though not used in chat, it's in the original snippet.
 
 // --- AI Scraper Class (Provided by you) ---
 class Copilot {
@@ -77,7 +76,6 @@ class Copilot {
                             break;
                     }
                 } catch (error) {
-                    // This catches JSON parsing errors or other issues within the message handler
                     reject(new Error('Failed to process message from AI service.'));
                 }
             });
@@ -85,29 +83,20 @@ class Copilot {
             ws.on('error', (err) => {
                 reject(new Error(`WebSocket error: ${err.message}`));
             });
-
-            ws.on('close', (code, reason) => {
-                if (code !== 1000) { // 1000 is normal closure
-                    // If not already resolved/rejected, this indicates an unexpected closure.
-                    // Note: This might fire after a resolution/rejection, so check if the promise is settled first.
-                }
-            });
         });
     }
 }
-
 
 // --- Express Server Setup ---
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors()); // Enable Cross-Origin Resource Sharing
-app.use(express.json()); // Enable JSON body parsing for API requests
+app.use(cors());
+app.use(express.json());
 
-// --- API Endpoint ---
+// --- API Endpoint (Updated) ---
 app.post('/api/ai', async (req, res) => {
-    const { query } = req.body;
+    const { query, customModel, language } = req.body;
 
     if (!query || typeof query !== 'string' || query.trim() === '') {
         return res.status(400).json({ 
@@ -118,22 +107,41 @@ app.post('/api/ai', async (req, res) => {
 
     try {
         const startTime = Date.now();
+        
+        // --- Prompt Engineering ---
+        // Create a more detailed final prompt based on user customization
+        let instructions = [];
+        if (customModel && customModel.trim() !== '') {
+            instructions.push(`Anda adalah AI yang harus berperan sebagai: "${customModel}". Pertahankan karakter ini dalam jawaban Anda.`);
+        }
+        if (language && language.trim() !== '' && language.toLowerCase() !== 'default') {
+            instructions.push(`Anda harus menjawab secara eksklusif dalam Bahasa ${language}.`);
+        }
+
+        // Combine instructions with the original query
+        let finalPrompt = query;
+        if (instructions.length > 0) {
+            finalPrompt = `${instructions.join(' ')}\n\n---\n\nPERTANYAAN:\n${query}`;
+        }
+
         const copilot = new Copilot();
-        const aiResponse = await copilot.chat(query);
+        const aiResponse = await copilot.chat(finalPrompt);
         const duration = Date.now() - startTime;
         
-        // Sanitize response to ensure it's valid JSON
         const responseText = aiResponse.text.trim();
         const citations = aiResponse.citations || [];
 
-        // Construct metadata
+        // Construct metadata with new custom fields
         const metadata = {
             queryLength: query.length,
+            finalPromptLength: finalPrompt.length,
             responseLength: responseText.length,
             citationCount: citations.length,
             executionTime: `${duration}ms`,
             timestamp: new Date().toISOString(),
-            modelUsed: 'default' // As per your UI
+            modelUsed: 'default',
+            customCharacter: customModel || 'Tidak diatur',
+            outputLanguage: language || 'Default'
         };
         
         res.json({
@@ -154,11 +162,9 @@ app.post('/api/ai', async (req, res) => {
 });
 
 // --- Serve Frontend ---
-// This serves the index.html file for the root URL
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
-
 
 // Fallback for 404 Not Found
 app.use((req, res) => {
