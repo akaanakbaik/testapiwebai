@@ -33,6 +33,7 @@ class Copilot {
     }
 
     async chat(message, { model = 'default' } = {}) {
+        // This check ensures a conversation is always available.
         if (!this.conversationId) await this.createConversation();
         if (!this.models[model]) throw new Error(`Available models: ${Object.keys(this.models).join(', ')}`);
         
@@ -91,10 +92,15 @@ class Copilot {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// *** PERFORMANCE OPTIMIZATION: Create a single, reusable Copilot instance ***
+// This instance will persist and reuse its conversationId across multiple API calls,
+// significantly speeding up responses by avoiding new conversation setup for each request.
+const copilot = new Copilot();
+
 app.use(cors());
 app.use(express.json());
 
-// --- API Endpoint (Updated) ---
+// --- API Endpoint (Optimized) ---
 app.post('/api/ai', async (req, res) => {
     const { query, customModel, language } = req.body;
 
@@ -109,29 +115,23 @@ app.post('/api/ai', async (req, res) => {
         const startTime = Date.now();
         
         // --- Prompt Engineering ---
-        // Create a more detailed final prompt based on user customization
         let instructions = [];
         if (customModel && customModel.trim() !== '') {
             instructions.push(`Anda adalah AI yang harus berperan sebagai: "${customModel}". Pertahankan karakter ini dalam jawaban Anda.`);
         }
-        if (language && language.trim() !== '' && language.toLowerCase() !== 'default') {
-            instructions.push(`Anda harus menjawab secara eksklusif dalam Bahasa ${language}.`);
-        }
+        // Always include language instruction since we have a default now.
+        const outputLanguage = language || 'Indonesia'; // Fallback just in case
+        instructions.push(`Anda harus menjawab secara eksklusif dalam Bahasa ${outputLanguage}.`);
 
-        // Combine instructions with the original query
-        let finalPrompt = query;
-        if (instructions.length > 0) {
-            finalPrompt = `${instructions.join(' ')}\n\n---\n\nPERTANYAAN:\n${query}`;
-        }
+        let finalPrompt = `${instructions.join(' ')}\n\n---\n\nPERTANYAAN:\n${query}`;
 
-        const copilot = new Copilot();
+        // Use the single, persistent copilot instance for the chat.
         const aiResponse = await copilot.chat(finalPrompt);
         const duration = Date.now() - startTime;
         
         const responseText = aiResponse.text.trim();
         const citations = aiResponse.citations || [];
 
-        // Construct metadata with new custom fields
         const metadata = {
             queryLength: query.length,
             finalPromptLength: finalPrompt.length,
@@ -141,7 +141,7 @@ app.post('/api/ai', async (req, res) => {
             timestamp: new Date().toISOString(),
             modelUsed: 'default',
             customCharacter: customModel || 'Tidak diatur',
-            outputLanguage: language || 'Default'
+            outputLanguage: outputLanguage
         };
         
         res.json({
