@@ -61,7 +61,7 @@
                     placeholder="Ketik permintaan Anda di sini... contoh: Apa itu Node.js?"></textarea>
             </div>
             
-            <!-- NEW: Customization Box -->
+            <!-- Customization Box -->
             <div id="custom-box" class="mt-6 p-4 border border-gray-700 rounded-lg bg-gray-900/30">
                 <h3 class="text-lg font-semibold text-gray-200 mb-4">Custom</h3>
                 <div class="space-y-4">
@@ -78,8 +78,7 @@
                     <div>
                         <label for="language-select" class="block mb-2 text-sm font-medium text-gray-300">Pilih Bahasa Output AI</label>
                         <select id="language-select" class="bg-gray-800/60 border border-gray-600 text-gray-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                            <option selected value="Default">Default</option>
-                            <option value="Indonesia">Indonesia</option>
+                            <option value="Indonesia" selected>Indonesia</option>
                             <option value="Inggris">Inggris (English)</option>
                             <option value="Melayu">Melayu (Malay)</option>
                             <option value="Mandarin">Mandarin</option>
@@ -102,35 +101,7 @@
 
         <!-- Result Section (Initially Hidden) -->
         <div id="result-container" class="w-full mt-8 hidden">
-            <div class="glass-card w-full p-6 sm:p-8 rounded-2xl shadow-2xl shadow-black/30 space-y-6">
-                <!-- Log Output -->
-                <div>
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-lg font-semibold text-gray-200">Execution Log</h3>
-                        <button id="copy-log-btn" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium py-1 px-3 rounded-md transition">Copy Log</button>
-                    </div>
-                    <div class="bg-black rounded-lg p-4 max-h-96 overflow-y-auto">
-                        <pre id="log-output" class="text-sm text-gray-300 whitespace-pre-wrap break-words"></pre>
-                    </div>
-                </div>
-
-                <!-- Metadata -->
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-200 mb-2">Metadata</h3>
-                    <div class="bg-black rounded-lg p-4 max-h-60 overflow-y-auto">
-                        <pre id="metadata-output" class="text-sm text-green-400 whitespace-pre-wrap break-words"></pre>
-                    </div>
-                </div>
-
-                <!-- cURL Example -->
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-200 mb-2">Example cURL</h3>
-                    <div class="bg-black rounded-lg p-4 relative">
-                        <pre id="curl-output" class="text-sm text-yellow-300 whitespace-pre-wrap break-words overflow-x-auto"></pre>
-                        <button id="copy-curl-btn" class="absolute top-3 right-3 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium py-1 px-3 rounded-md transition">Copy</button>
-                    </div>
-                </div>
-            </div>
+            <!-- Content will be injected here by script -->
         </div>
         
         <!-- Contact Card -->
@@ -150,23 +121,17 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Get DOM elements
             const queryInput = document.getElementById('query-input');
-            const customModelInput = document.getElementById('custom-model-input'); // New
-            const languageSelect = document.getElementById('language-select'); // New
+            const customModelInput = document.getElementById('custom-model-input');
+            const languageSelect = document.getElementById('language-select');
             const execBtn = document.getElementById('exec-btn');
             const clearBtn = document.getElementById('clear-btn');
             const resultContainer = document.getElementById('result-container');
-            const logOutput = document.getElementById('log-output');
-            const metadataOutput = document.getElementById('metadata-output');
-            const curlOutput = document.getElementById('curl-output');
-            const copyLogBtn = document.getElementById('copy-log-btn');
-            const copyCurlBtn = document.getElementById('copy-curl-btn');
 
             const handleExec = async () => {
                 const query = queryInput.value.trim();
-                const customModel = customModelInput.value.trim(); // Get custom model value
-                const language = languageSelect.value; // Get language value
+                const customModel = customModelInput.value.trim();
+                const language = languageSelect.value;
 
                 if (!query) {
                     alert('Mohon masukkan query terlebih dahulu.');
@@ -176,12 +141,9 @@
                 execBtn.disabled = true;
                 execBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Processing...`;
                 resultContainer.classList.remove('hidden');
-                logOutput.textContent = 'Menghubungi server AI...';
-                metadataOutput.textContent = '';
-                curlOutput.textContent = '';
+                resultContainer.innerHTML = `<div class="glass-card w-full p-6 sm:p-8 rounded-2xl shadow-2xl shadow-black/30"><div class="bg-black rounded-lg p-4"><pre class="text-sm text-gray-300">Menghubungi server AI...</pre></div></div>`;
                 
                 try {
-                    // Updated fetch body with new data
                     const response = await fetch('/api/ai', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -194,36 +156,67 @@
                     }
 
                     const data = await response.json();
-
-                    logOutput.textContent = data.response || 'Tidak ada respons teks yang diterima.';
-                    metadataOutput.textContent = JSON.stringify(data.metadata, null, 2);
-                    
-                    // Updated cURL generation to include new fields
-                    const currentUrl = window.location.origin;
-                    const apiPayload = { query };
-                    if (customModel) apiPayload.customModel = customModel;
-                    if (language && language !== 'Default') apiPayload.language = language;
-
-                    const payloadString = JSON.stringify(apiPayload, null, 2);
-                    curlOutput.textContent = `curl -X POST '${currentUrl}/api/ai' \\\n-H 'Content-Type: application/json' \\\n-d '${payloadString}'`;
+                    displayResults(data, { query, customModel, language });
 
                 } catch (error) {
-                    logOutput.textContent = `Error: ${error.message}`;
+                    resultContainer.innerHTML = `<div class="glass-card w-full p-6 sm:p-8 rounded-2xl shadow-2xl shadow-black/30"><div class="bg-black rounded-lg p-4"><pre class="text-sm text-red-400">Error: ${error.message}</pre></div></div>`;
                     console.error('Fetch error:', error);
                 } finally {
                     execBtn.disabled = false;
                     execBtn.textContent = 'Exec';
                 }
             };
+
+            const displayResults = (data, inputs) => {
+                const { query, customModel, language } = inputs;
+                const logContent = data.response || 'Tidak ada respons teks yang diterima.';
+                const metadataContent = JSON.stringify(data.metadata, null, 2);
+
+                const currentUrl = window.location.origin;
+                const apiPayload = { query };
+                if (customModel) apiPayload.customModel = customModel;
+                if (language) apiPayload.language = language;
+
+                const payloadString = JSON.stringify(apiPayload, null, 2);
+                const curlContent = `curl -X POST '${currentUrl}/api/ai' \\\n-H 'Content-Type: application/json' \\\n-d '${payloadString}'`;
+
+                resultContainer.innerHTML = `
+                    <div class="glass-card w-full p-6 sm:p-8 rounded-2xl shadow-2xl shadow-black/30 space-y-6">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-lg font-semibold text-gray-200">Execution Log</h3>
+                                <button id="copy-log-btn" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium py-1 px-3 rounded-md transition">Copy Log</button>
+                            </div>
+                            <div class="bg-black rounded-lg p-4 max-h-96 overflow-y-auto">
+                                <pre id="log-output" class="text-sm text-gray-300 whitespace-pre-wrap break-words">${logContent}</pre>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-200 mb-2">Metadata</h3>
+                            <div class="bg-black rounded-lg p-4 max-h-60 overflow-y-auto">
+                                <pre id="metadata-output" class="text-sm text-green-400 whitespace-pre-wrap break-words">${metadataContent}</pre>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-200 mb-2">Example cURL</h3>
+                            <div class="bg-black rounded-lg p-4 relative">
+                                <pre id="curl-output" class="text-sm text-yellow-300 whitespace-pre-wrap break-words overflow-x-auto">${curlContent}</pre>
+                                <button id="copy-curl-btn" class="absolute top-3 right-3 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium py-1 px-3 rounded-md transition">Copy</button>
+                            </div>
+                        </div>
+                    </div>`;
+
+                // Re-attach listeners for the new buttons
+                document.getElementById('copy-log-btn').addEventListener('click', () => copyToClipboard(logContent, document.getElementById('copy-log-btn')));
+                document.getElementById('copy-curl-btn').addEventListener('click', () => copyToClipboard(curlContent, document.getElementById('copy-curl-btn')));
+            };
             
             const handleClear = () => {
                 queryInput.value = '';
-                customModelInput.value = ''; // Clear custom model input
-                languageSelect.value = 'Default'; // Reset language select
+                customModelInput.value = '';
+                languageSelect.value = 'Indonesia'; // Reset to new default
                 resultContainer.classList.add('hidden');
-                logOutput.textContent = '';
-                metadataOutput.textContent = '';
-                curlOutput.textContent = '';
+                resultContainer.innerHTML = '';
             };
 
             const copyToClipboard = (text, button) => {
@@ -233,14 +226,11 @@
                     setTimeout(() => { button.textContent = originalText; }, 2000);
                 }).catch(err => {
                     console.error('Gagal menyalin:', err);
-                    alert('Gagal menyalin ke clipboard.');
                 });
             };
 
             execBtn.addEventListener('click', handleExec);
             clearBtn.addEventListener('click', handleClear);
-            copyLogBtn.addEventListener('click', () => copyToClipboard(logOutput.textContent, copyLogBtn));
-            copyCurlBtn.addEventListener('click', () => copyToClipboard(curlOutput.textContent, copyCurlBtn));
         });
     </script>
 </body>
